@@ -83,4 +83,4 @@ def business():
 
 
 if __name__ == "__main__":
-    app.run(host=socket.gethostbyname(socket.gethostname()), port=3001, debug=True)
+    app.run(host=socket.gethostbyname(socket.gethostname()), port=3001, debug=True, threaded=True)
