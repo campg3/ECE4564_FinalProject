@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ECE4564_Team03.gov</title>
+</head>
+<body>
+<h1>Welcome to ECE4564_Team03.gov!</h1>
+<p>See below for COVID-19 statistics in the US!</p>
+<p>Total COVID-19 cases: {{ p1 }}</p>
+<p>Total deaths due to COVID-19: {{ p2 }}</p>
+<p>Total who have recovered from COVID-19: {{ p3 }}</p>
+<p>How many people have we vaccinated?</p>
+<p>{{ p4 }}</p>
+
+<button type="button" onclick="window.location.href='{{ url_for( 'user') }}';">Get your QR code</button>
+</body>
+</html>
