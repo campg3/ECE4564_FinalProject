@@ -8,6 +8,7 @@ import requests
 from flask import Flask, request
 from flask_httpauth import HTTPBasicAuth
 from werkzeug.security import generate_password_hash, check_password_hash
+import socket
 
 # Initializes Flask server and basic HTTP authentication
 app = Flask(__name__)
@@ -36,8 +37,8 @@ def user():
 @app.route("/business", methods=['GET', 'PUT'])
 @auth.login_required
 def business():
-    return "In business path"
+    return "Vaccination Record Found"
 
 
 if __name__ == "__main__":
-    app.run(host='', port=3000, debug=True)
+    app.run(host=socket.gethostbyname(socket.gethostname()), port=3001, debug=True)
