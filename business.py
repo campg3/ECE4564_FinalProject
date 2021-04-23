@@ -26,7 +26,7 @@ def read_barcodes(frame):
             barcode_info = barcode.data.decode('utf-8')
 
             # send data to government business endpoint, test
-            r = requests.get('http://66.199.73.35:3001/business', auth=("admin", "secret"))
+            r = requests.get('http://66.199.73.35:3001/business', auth=("admin", "secret"), params={'qr': barcode_info})
 
             # if vaccination confirmed, show green and display confirmed message
             if r.text == "Vaccination Record Found":
