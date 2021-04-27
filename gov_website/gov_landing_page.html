@@ -5,14 +5,36 @@
     <title>ECE4564_Team03.gov</title>
 </head>
 <body>
-<h1>Welcome to ECE4564_Team03.gov!</h1>
-<p>See below for COVID-19 statistics in the US!</p>
-<p>Total COVID-19 cases: {{ p1 }}</p>
-<p>Total deaths due to COVID-19: {{ p2 }}</p>
-<p>Total who have recovered from COVID-19: {{ p3 }}</p>
-<p>How many people have we vaccinated?</p>
-<p>{{ p4 }}</p>
+<h1 style="text-align:center">Welcome to ECE4564_Team03.gov!</h1>
+<p style="text-align:center">See below for COVID-19 statistics in the US!</p>
+<table style="width: 100%">
+    <tr>
+        <th>Total COVID-19 cases</th>
+        <th>How many people have we vaccinated?</th>
+    </tr>
+    <tr>
+        <td style="text-align: center">{{ p1 }}</td>
+        <td style="text-align: center">{{ p4 }}</td>
+    </tr>
+    <tr>
+        <th>Total deaths due to COVID-19</th>
+    </tr>
+    <tr>
+        <td style="text-align: center">{{ p2 }}</td>
+    </tr>
+    <tr>
+        <th>Total who have recovered from COVID-19</th>
+    </tr>
+    <tr>
+        <td style="text-align: center">{{ p3 }}</td>
+    </tr>
+</table>
 
-<button type="button" onclick="window.location.href='{{ url_for( 'user') }}';">Get your QR code</button>
+<div style="text-align: center">
+    <button type="button" onclick="window.location.href='{{ url_for( 'individual') }}';">Need proof you've been vaccinated? Get your QR code</button>
+</div>
+<div style="text-align: center; margin-top: 1%">
+    <button type="button" onclick="window.location.href='https://covid19vaccinecenterlocator.uhc.com/cvcl'">Haven't been vaccinated? Find info here</button>
+</div>
 </body>
 </html>

@@ -17,7 +17,7 @@ from bs4 import BeautifulSoup
 app = Flask(__name__, template_folder='gov_website')
 auth = HTTPBasicAuth()
 
-# For storing valid login credentials
+# For storing valid login credentials, this is for businesses
 users = {
     "admin": generate_password_hash("secret"),
 }
@@ -61,9 +61,9 @@ def landing():
 
 
 # Flask server route for user getting QR code
-@app.route("/user", methods=['GET', 'PUT', 'POST'])
-def user():
-    return "In user path"
+@app.route("/individual", methods=['GET', 'PUT', 'POST'])
+def individual():
+    return "In individual path"
 
 
 # Flask server route for business scanning QR code
@@ -76,7 +76,11 @@ def business():
         gov_keys.DATABASE_NAME + "?retryWrites=true&w=majority")
     db = client[gov_keys.DATABASE_NAME]
     collection = db[gov_keys.PATIENT_COLLECTION]
-    if collection.find_one({gov_keys.QR_CODE_ID: request.args.get(gov_keys.QR_CODE_REQUEST_PARAM)}) is None:
+    if (len(request.args)) == 0:
+        return 'ACCESS DENIED: ' \
+               'This endpiont should only be accessed from the Government Provided Tool, not from an internet url.'
+    collection_item = collection.find_one({gov_keys.QR_CODE_ID: request.args.get(gov_keys.QR_CODE_REQUEST_PARAM)})
+    if collection_item is None:
         return "No Vaccination Record Found"
     else:
         return "Vaccination Record Found"
