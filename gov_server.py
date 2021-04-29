@@ -57,7 +57,7 @@ def landing():
     return render_template("gov_landing_page.html", p1=str(result['Coronavirus Cases']),
                            p2=str(result['Deaths']),
                            p3=str(result['Recovered']),
-                           p4=str(collection.count()))
+                           p4=str(collection.count_documents({})))
 
 
 # Flask server route for user getting QR code
@@ -83,6 +83,7 @@ def business():
     if collection_item is None:
         return "No Vaccination Record Found"
     else:
+        # possibly update the QR to disable duplication
         return "Vaccination Record Found"
 
 
