@@ -12,6 +12,9 @@ import socket
 from pymongo import MongoClient
 import gov_keys
 from bs4 import BeautifulSoup
+import qrcode
+from bson.json_util import dumps, loads
+import json
 
 # Initializes Flask server and basic HTTP authentication
 app = Flask(__name__, template_folder='gov_website')
@@ -63,7 +66,43 @@ def landing():
 # Flask server route for user getting QR code
 @app.route("/individual", methods=['GET', 'PUT', 'POST'])
 def individual():
-    return "In individual path"
+    # Connect to MongoDB client, database, and collection
+    client = MongoClient(
+        "mongodb+srv://" + gov_keys.DATABASE_ADMIN_USERNAME + ":" + gov_keys.DATABASE_ADMIN_PASSWORD +
+        "@cluster0.mm83g.mongodb.net/" +
+        gov_keys.DATABASE_NAME + "?retryWrites=true&w=majority")
+    db = client[gov_keys.DATABASE_NAME]
+    collection = db[gov_keys.PATIENT_COLLECTION]
+
+    if request.method == "POST":
+        # Get name and DOB from website
+        first_name = request.form.get("firstname")
+        last_name = request.form.get("lastname")
+        dob = request.form.get("dob")
+
+        # Get entry from database
+        record_query = {
+            "FirstName": first_name,
+            "LastName": last_name,
+            "DateOfBirth": dob
+        }
+        record = collection.find(record_query)
+
+        if record is None:
+            return "No Vaccination Record Found"
+        else:
+            json_list = list(record)
+            json_record = dumps(json_list, indent=4)
+            json_data = json.loads(json_record)
+
+            # Make QR code and save
+            filename = "static/your_qr.png"
+            img = qrcode.make(json_data[0]['QRCodeData'])
+            img.save(filename)
+            full_filename = 'static/your_qr.png'
+            return render_template("gov_output_qr.html", user_image=full_filename)
+
+    return render_template("gov_get_qr.html")
 
 
 # Flask server route for business scanning QR code
@@ -78,7 +117,7 @@ def business():
     collection = db[gov_keys.PATIENT_COLLECTION]
     if (len(request.args)) == 0:
         return 'ACCESS DENIED: ' \
-               'This endpiont should only be accessed from the Government Provided Tool, not from an internet url.'
+               'This endpoint should only be accessed from the Government Provided Tool, not from an internet url.'
     collection_item = collection.find_one({gov_keys.QR_CODE_ID: request.args.get(gov_keys.QR_CODE_REQUEST_PARAM)})
     if collection_item is None:
         return "No Vaccination Record Found"
