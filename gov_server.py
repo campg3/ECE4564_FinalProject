@@ -86,18 +86,15 @@ def individual():
             "LastName": last_name,
             "DateOfBirth": dob
         }
-        record = collection.find(record_query)
+        record = collection.find_one(record_query)
 
         if record is None:
             return "No Vaccination Record Found"
         else:
-            json_list = list(record)
-            json_record = dumps(json_list, indent=4)
-            json_data = json.loads(json_record)
 
             # Make QR code and save
             filepath = "static/your_qr.png"
-            img = qrcode.make(json_data[0]['QRCodeData'])
+            img = qrcode.make(record['QRCodeData'])
             img.save(filepath)
             return render_template("gov_output_qr.html", user_image=filepath)
 
