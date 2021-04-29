@@ -1,9 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Index</title>
+    <title>QR Code</title>
 </head>
 <body>
+<div style="text-align: center">
     <img src="{{ user_image }}" alt="User Image">
+</div>
+<div style="text-align: center">
+    <button type="button" onclick="window.location.href='{{ url_for('individual') }}';">Enter Again</button>
+</div><br>
+<div style="text-align: center">
+    <button type="button" onclick="window.location.href='{{'/'}}';">Back to Home Page</button>
+</div>
 </body>
 </html>
