@@ -79,12 +79,15 @@ def individual():
         first_name = request.form.get("firstname")
         last_name = request.form.get("lastname")
         dob = request.form.get("dob")
+        last_four_ssn = request.form.get("ssn")
+        ssn = ".*" + last_four_ssn
 
         # Get entry from database
         record_query = {
             "FirstName": first_name,
             "LastName": last_name,
-            "DateOfBirth": dob
+            "DateOfBirth": dob,
+            "SSN": {'$regex':ssn}
         }
         record = collection.find_one(record_query)
 
