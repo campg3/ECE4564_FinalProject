@@ -96,11 +96,10 @@ def individual():
             json_data = json.loads(json_record)
 
             # Make QR code and save
-            filename = "static/your_qr.png"
+            filepath = "static/your_qr.png"
             img = qrcode.make(json_data[0]['QRCodeData'])
-            img.save(filename)
-            full_filename = 'static/your_qr.png'
-            return render_template("gov_output_qr.html", user_image=full_filename)
+            img.save(filepath)
+            return render_template("gov_output_qr.html", user_image=filepath)
 
     return render_template("gov_get_qr.html")
 
