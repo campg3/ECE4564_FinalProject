@@ -87,16 +87,15 @@ def individual():
             "FirstName": first_name,
             "LastName": last_name,
             "DateOfBirth": dob,
-            "SSN": {'$regex':ssn}
+            "SSN": {'$regex': ssn}
         }
         record = collection.find_one(record_query)
 
         if record is None:
             return "No Vaccination Record Found"
         else:
-
             # Make QR code and save
-            filepath = "static/your_qr.png"
+            filepath = "static/" + record['QRCodeData'] + ".png"
             img = qrcode.make(record['QRCodeData'])
             img.save(filepath)
             return render_template("gov_output_qr.html", user_image=filepath)
