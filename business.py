@@ -10,11 +10,22 @@ from pyzbar import pyzbar
 import winsound
 import requests
 import simpleaudio as sa
+import tkinter as tk
+from tkinter import *
 
 green = (0, 255, 0)
 red = (255, 0, 0)
 announcement_read = True
 num_admitted = 0
+root = tk.Tk()
+root.geometry("500x300")
+var = IntVar()
+var.set(num_admitted)
+text_label = Label(root, text="Number of people permitted access today", relief=RAISED)
+text_label.pack(side=TOP, expand=YES, fill=BOTH)
+count_label = Label(root, textvariable=var, relief=RAISED, bd=4)
+count_label.pack(side=TOP, expand=YES, fill=BOTH)
+
 
 def read_barcodes(frame):
     barcodes = pyzbar.decode(frame)
@@ -48,27 +59,48 @@ def announce_result(vaccination_found, possible_duplication):
     global num_admitted
     announcement_read = False
     if vaccination_found:
+        show_green()
         num_admitted += 1
-        print("There have been " + str(num_admitted) + " people admitted entry today")
+        var.set(num_admitted)
+        root.update_idletasks()
         filename = './business_audio/entry_permitted.wav'
         wave_obj = sa.WaveObject.from_wave_file(filename)
         play_obj = wave_obj.play()
         play_obj.wait_done()
     elif possible_duplication:
+        show_yellow()
         filename = './business_audio/duplicate_qr.wav'
         wave_obj = sa.WaveObject.from_wave_file(filename)
         play_obj = wave_obj.play()
         play_obj.wait_done()
     else:
+        show_red()
         filename = './business_audio/entry_denied.wav'
         wave_obj = sa.WaveObject.from_wave_file(filename)
         play_obj = wave_obj.play()
         play_obj.wait_done()
+    back_to_normal()
     announcement_read = True
 
 
 def beep():
     winsound.Beep(700, 400)
+
+
+def show_green():
+    count_label.config(bg="#32CD32")
+
+
+def show_red():
+    count_label.config(bg="red")
+
+
+def show_yellow():
+    count_label.config(bg="yellow")
+
+
+def back_to_normal():
+    count_label.config(bg="SystemButtonFace")
 
 
 def main():
@@ -89,4 +121,6 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    thread = threading.Thread(target=main, daemon=True)
+    thread.start()
+    tk.mainloop()
