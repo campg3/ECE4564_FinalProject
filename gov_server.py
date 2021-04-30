@@ -18,6 +18,7 @@ import qrcode
 from bson.json_util import dumps, loads
 import json
 from cryptography.fernet import Fernet
+import pickle
 
 # Initializes Flask server and basic HTTP authentication
 app = Flask(__name__, template_folder='gov_website')
@@ -90,12 +91,15 @@ def individual():
         ssn = ".*" + last_four_ssn
 
         # Get entry from database
-
         records = collection.find({})
         record_found = False
         for r in records:
             try:
                 key.decrypt(r['QRCodeData'].encode())
+                query = {gov_keys.QR_CODE_ID: r['QRCodeData']}
+                if r["NumIndividualRequests"] <= r["NumBusinessRequests"]:
+                    collection.update_one(query, {
+                        "$set": {"NumIndividualRequests": r["NumIndividualRequests"] + 1}})
                 filepath = "static/" + r['QRCodeData'] + ".png"
                 img = qrcode.make(r['QRCodeData'])
                 img.save(filepath)
@@ -121,11 +125,15 @@ def business():
     if (len(request.args)) == 0:
         return 'ACCESS DENIED: ' \
                'This endpoint should only be accessed from the Government Provided Tool, not from an internet url.'
-    collection_item = collection.find_one({gov_keys.QR_CODE_ID: request.args.get(gov_keys.QR_CODE_REQUEST_PARAM)})
+    qr_param = request.args.get(gov_keys.QR_CODE_REQUEST_PARAM)
+    query = {gov_keys.QR_CODE_ID: qr_param}
+    collection_item = collection.find_one(query)
     if collection_item is None:
         return "No Vaccination Record Found"
     else:
-        # possibly update the QR to disable duplication
+        if collection_item["NumBusinessRequests"] == collection_item["NumIndividualRequests"]:
+            return "Warning: Do not duplicate QR codes"
+        collection.update_one(query, {"$set": {"NumBusinessRequests": collection_item["NumBusinessRequests"]+1}})
         return "Vaccination Record Found"
 
 

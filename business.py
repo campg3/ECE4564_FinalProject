@@ -30,24 +30,32 @@ def read_barcodes(frame):
 
             # if vaccination confirmed, show green and display confirmed message
             if r.text == "Vaccination Record Found":
-                t = threading.Thread(target=announce_result, args=(True,), daemon=True)
+                t = threading.Thread(target=announce_result, args=(True, False), daemon=True)
                 t.start()
-            else:  # if no vaccination found, show red and display no vaccination found message
-                t = threading.Thread(target=announce_result, args=(False,), daemon=True)
+            elif r.text == "Warning: Do not duplicate QR codes":  # if no vaccination found, show red and display no vaccination found message
+                t = threading.Thread(target=announce_result, args=(False, True), daemon=True)
+                t.start()
+            else:
+                t = threading.Thread(target=announce_result, args=(False, False), daemon=True)
                 t.start()
 
         return True
     return False
 
 
-def announce_result(vaccination_found):
+def announce_result(vaccination_found, possible_duplication):
     global announcement_read
     global num_admitted
     announcement_read = False
     if vaccination_found:
         num_admitted += 1
-        print("There have been " + num_admitted + " people admitted entry today")
+        print("There have been " + str(num_admitted) + " people admitted entry today")
         filename = './business_audio/entry_permitted.wav'
+        wave_obj = sa.WaveObject.from_wave_file(filename)
+        play_obj = wave_obj.play()
+        play_obj.wait_done()
+    elif possible_duplication:
+        filename = './business_audio/duplicate_qr.wav'
         wave_obj = sa.WaveObject.from_wave_file(filename)
         play_obj = wave_obj.play()
         play_obj.wait_done()

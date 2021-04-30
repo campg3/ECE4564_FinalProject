@@ -39,6 +39,8 @@ def submit():
         dob = dob_var.get()
 
         # Create data for QR code and encrypt
+        num_business_requests = 0
+        num_individual_requests = 0
         qr_data = str(firstname + "_" + middlename + "_" + lastname + "_" + ssn[-4:])
         encryption_key = str(firstname + "_" + lastname + "_" + ssn[-4:] + "_" + dob)
         hash_var = hashlib.md5(encryption_key.encode())
@@ -51,7 +53,7 @@ def submit():
         current_date = today.strftime("%m/%d/%Y")
         vaccine_entry = {"FirstName": key.encrypt(firstname.encode()).decode(), "MiddleName": key.encrypt(middlename.encode()).decode(), "LastName": key.encrypt(lastname.encode()).decode(),
                          "SSN": key.encrypt(ssn.encode()).decode(), "DateOfBirth": key.encrypt(dob.encode()).decode(), "QRCodeData": encrypted_qr.decode(), "DateVaccinated": key.encrypt(current_date.encode()).decode(),
-                         "NumBusinessRequests": key.encrypt(str(0).encode()).decode()}
+                         "NumBusinessRequests": num_business_requests, "NumIndividualRequests": num_individual_requests}
         x = collection.insert_one(vaccine_entry)
 
         # Reset variables for next user to input
