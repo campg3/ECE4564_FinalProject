@@ -3,6 +3,8 @@
 # File: gov_server.py
 # Purpose: Flask server used as the government website that users and businesses
 #          can get or scan QR codes and determine if someone is vaccinated.
+import base64
+import hashlib
 
 import requests
 from flask import Flask, request, render_template
@@ -15,6 +17,7 @@ from bs4 import BeautifulSoup
 import qrcode
 from bson.json_util import dumps, loads
 import json
+from cryptography.fernet import Fernet
 
 # Initializes Flask server and basic HTTP authentication
 app = Flask(__name__, template_folder='gov_website')
@@ -80,25 +83,27 @@ def individual():
         last_name = request.form.get("lastname")
         dob = request.form.get("dob")
         last_four_ssn = request.form.get("ssn")
+        encryption_key = str(first_name + "_" + last_name + "_" + last_four_ssn + "_" + dob)
+        hash_var = hashlib.md5(encryption_key.encode())
+        gen_key = base64.urlsafe_b64encode(hash_var.hexdigest().encode())
+        key = Fernet(gen_key)
         ssn = ".*" + last_four_ssn
 
         # Get entry from database
-        record_query = {
-            "FirstName": first_name,
-            "LastName": last_name,
-            "DateOfBirth": dob,
-            "SSN": {'$regex': ssn}
-        }
-        record = collection.find_one(record_query)
 
-        if record is None:
+        records = collection.find({})
+        record_found = False
+        for r in records:
+            try:
+                key.decrypt(r['QRCodeData'].encode())
+                filepath = "static/" + r['QRCodeData'] + ".png"
+                img = qrcode.make(r['QRCodeData'])
+                img.save(filepath)
+                return render_template("gov_output_qr.html", user_image=filepath)
+            except:
+                continue
+        if not record_found:
             return "No Vaccination Record Found"
-        else:
-            # Make QR code and save
-            filepath = "static/" + record['QRCodeData'] + ".png"
-            img = qrcode.make(record['QRCodeData'])
-            img.save(filepath)
-            return render_template("gov_output_qr.html", user_image=filepath)
 
     return render_template("gov_get_qr.html")
 

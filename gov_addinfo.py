@@ -10,6 +10,8 @@ import gov_keys
 from cryptography.fernet import Fernet
 from datetime import date
 import pickle
+import base64
+import hashlib
 
 # Initialize tk and variables
 root = tk.Tk()
@@ -38,16 +40,18 @@ def submit():
 
         # Create data for QR code and encrypt
         qr_data = str(firstname + "_" + middlename + "_" + lastname + "_" + ssn[-4:])
-        gen_key = Fernet.generate_key()
+        encryption_key = str(firstname + "_" + lastname + "_" + ssn[-4:] + "_" + dob)
+        hash_var = hashlib.md5(encryption_key.encode())
+        gen_key = base64.urlsafe_b64encode(hash_var.hexdigest().encode())
         key = Fernet(gen_key)
         encrypted_qr = key.encrypt(qr_data.encode())
 
         # Add encryption entry to database
         today = date.today()
         current_date = today.strftime("%m/%d/%Y")
-        vaccine_entry = {"FirstName": firstname, "MiddleName": middlename, "LastName": lastname,
-                         "SSN": ssn, "DateOfBirth": dob, "QRCodeData": encrypted_qr.decode(), "DateVaccinated": current_date,
-                         "NumBusinessRequests": 0}
+        vaccine_entry = {"FirstName": key.encrypt(firstname.encode()).decode(), "MiddleName": key.encrypt(middlename.encode()).decode(), "LastName": key.encrypt(lastname.encode()).decode(),
+                         "SSN": key.encrypt(ssn.encode()).decode(), "DateOfBirth": key.encrypt(dob.encode()).decode(), "QRCodeData": encrypted_qr.decode(), "DateVaccinated": key.encrypt(current_date.encode()).decode(),
+                         "NumBusinessRequests": key.encrypt(str(0).encode()).decode()}
         x = collection.insert_one(vaccine_entry)
 
         # Reset variables for next user to input

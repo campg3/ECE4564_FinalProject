@@ -14,7 +14,7 @@ import simpleaudio as sa
 green = (0, 255, 0)
 red = (255, 0, 0)
 announcement_read = True
-
+num_admitted = 0
 
 def read_barcodes(frame):
     barcodes = pyzbar.decode(frame)
@@ -42,8 +42,11 @@ def read_barcodes(frame):
 
 def announce_result(vaccination_found):
     global announcement_read
+    global num_admitted
     announcement_read = False
     if vaccination_found:
+        num_admitted += 1
+        print("There have been " + num_admitted + " people admitted entry today")
         filename = './business_audio/entry_permitted.wav'
         wave_obj = sa.WaveObject.from_wave_file(filename)
         play_obj = wave_obj.play()
@@ -70,6 +73,8 @@ def main():
             read_barcodes(frame)
         cv2.imshow('Barcode/QR code reader', frame)
         if cv2.waitKey(1) & 0xFF == 27:
+            break
+        if cv2.getWindowProperty('Barcode/QR code reader', cv2.WND_PROP_VISIBLE) < 1:
             break
     camera.release()
     cv2.destroyAllWindows()
