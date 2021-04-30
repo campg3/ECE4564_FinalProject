@@ -92,7 +92,7 @@ def show_green():
 
 
 def show_red():
-    count_label.config(bg="red")
+    count_label.config(bg="#ed1c24")
 
 
 def show_yellow():
