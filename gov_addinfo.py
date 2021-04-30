@@ -29,6 +29,7 @@ client = MongoClient(
         gov_keys.DATABASE_NAME + "?retryWrites=true&w=majority")
 db = client[gov_keys.DATABASE_NAME]
 collection = db[gov_keys.PATIENT_COLLECTION]
+development_collection = db[gov_keys.DEVELOPMENT_COLLECTION]
 
 def submit():
         # Get all fields from GUI
@@ -54,7 +55,14 @@ def submit():
         vaccine_entry = {"FirstName": key.encrypt(firstname.encode()).decode(), "MiddleName": key.encrypt(middlename.encode()).decode(), "LastName": key.encrypt(lastname.encode()).decode(),
                          "SSN": key.encrypt(ssn.encode()).decode(), "DateOfBirth": key.encrypt(dob.encode()).decode(), "QRCodeData": encrypted_qr.decode(), "DateVaccinated": key.encrypt(current_date.encode()).decode(),
                          "NumBusinessRequests": num_business_requests, "NumIndividualRequests": num_individual_requests}
+        develop_entry = {"FirstName": firstname,
+                         "MiddleName": middlename,
+                         "LastName": lastname,
+                         "SSN": ssn, "DateOfBirth": dob,
+                         "QRCodeData": qr_data,
+                         "DateVaccinated": current_date}
         x = collection.insert_one(vaccine_entry)
+        dev = development_collection.insert_one(develop_entry)
 
         # Reset variables for next user to input
         firstname_var.set("")
