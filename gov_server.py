@@ -181,15 +181,16 @@ def individual():
     # grab the input info and query the database for it. If found, display the QR
     if request.method == "POST":
         # Get name and DOB from website
-        first_name = request.form.get("firstname")
-        last_name = request.form.get("lastname")
-        dob = request.form.get("dob")
-        last_four_ssn = request.form.get("ssn")
+        first_name = request.form.get("firstname").strip()
+        last_name = request.form.get("lastname").strip()
+        dob = request.form.get("dob").strip()
+        last_four_ssn = request.form.get("ssn").strip()
+
+        # Make encryption key for searching database
         encryption_key = str(first_name + "_" + last_name + "_" + last_four_ssn + "_" + dob)
         hash_var = hashlib.md5(encryption_key.encode())
         gen_key = base64.urlsafe_b64encode(hash_var.hexdigest().encode())
         key = Fernet(gen_key)
-        ssn = ".*" + last_four_ssn
 
         # Get entry from database
         records = collection.find({})
