@@ -5,6 +5,7 @@
 #          can get or scan QR codes and determine if someone is vaccinated.
 import base64
 import hashlib
+import matplotlib
 import matplotlib.pyplot as plt
 import requests
 from flask import Flask, request, render_template
@@ -15,14 +16,12 @@ from pymongo import MongoClient
 import gov_keys
 from bs4 import BeautifulSoup
 import qrcode
-from bson.json_util import dumps, loads
-import json
 from cryptography.fernet import Fernet
-import pickle
 import uuid
 import re
 import shutil
 import os
+matplotlib.use("Agg")
 
 # Initializes Flask server and basic HTTP authentication
 app = Flask(__name__, template_folder='gov_website')
@@ -42,19 +41,8 @@ def verify_password(username, password):
         return username
 
 
-def request_helper(soup, result):
-    results = soup.find_all(id='maincounter-wrap')  # finds the data in the html
-    for r in results:
-        title = r.text.split(":")
-        if "Coronavirus Cases" in title[0]:
-            result['Coronavirus Cases'] = int(title[1].replace(",", ""))
-        elif "Deaths" == title[0].strip():
-            result['Deaths'] = int(title[1].replace(",", ""))
-        elif "Recovered" in title[0]:
-            result['Recovered'] = int(title[1].replace(",", ""))
-    return result
-
-
+# Page that shows data regarding new and active cases in the US today
+# options to view a summary or data in specific states
 @app.route("/today", methods=['GET', 'POST'])
 def today():
     url = "https://www.worldometers.info/coronavirus/"
@@ -85,10 +73,6 @@ def today():
 
     if request.method == "POST" and request.form.get("states") != "Summary":
         name = request.form.get("states")
-        # printing new cases
-        print(len(names_array))
-        print(len(new_cases_array))
-        print(len(active_array))
         data = [new_cases_array[names_array.index(name)],
                 active_array[names_array.index(name)]]
         names = ["New Cases (" + str(data[0]) + ")", "Active Cases (" + str(data[1])+ ")"]
@@ -146,18 +130,30 @@ def today():
                            user_image1=filename2)
 
 
-# Landing page for the government website
+# Landing page for the government website, shows some simple US COVID stats
 @app.route("/", methods=['GET'])
 def landing():
+    # clean out the directory where images are stored so it doesn't get too big
     shutil.rmtree('static')
     os.makedirs('static')
+
+    # extract data from the website for how many cases, deaths, and recoveries
     result = {'country': 'US'}
     url = "https://www.worldometers.info/coronavirus/"
     us_endpoint = "country/us/"
     r = requests.get(url + us_endpoint)
     soup = BeautifulSoup(r.content, 'html.parser')
-    result = request_helper(soup, result)
+    results = soup.find_all(id='maincounter-wrap')  # finds the data in the html
+    for r in results:
+        title = r.text.split(":")
+        if "Coronavirus Cases" in title[0]:
+            result['Coronavirus Cases'] = int(title[1].replace(",", ""))
+        elif "Deaths" == title[0].strip():
+            result['Deaths'] = int(title[1].replace(",", ""))
+        elif "Recovered" in title[0]:
+            result['Recovered'] = int(title[1].replace(",", ""))
 
+    # find how many vaccination records we have in order to display
     client = MongoClient(
         "mongodb+srv://" + gov_keys.DATABASE_ADMIN_USERNAME + ":" + gov_keys.DATABASE_ADMIN_PASSWORD +
         "@cluster0.mm83g.mongodb.net/" +
@@ -181,6 +177,8 @@ def individual():
     db = client[gov_keys.DATABASE_NAME]
     collection = db[gov_keys.PATIENT_COLLECTION]
 
+    # if the request is based on the submission of the user's data to get the QR code,
+    # grab the input info and query the database for it. If found, display the QR
     if request.method == "POST":
         # Get name and DOB from website
         first_name = request.form.get("firstname")
