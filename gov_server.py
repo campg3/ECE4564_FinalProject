@@ -62,7 +62,6 @@ def today():
     r = requests.get(url + us_endpoint)
     soup = BeautifulSoup(r.content, 'html.parser')
     name_results = soup.find_all(class_="mt_a")[:51]
-    print(name_results)
     names_array = []
     for name in name_results:
         names_array.append(name.text)
