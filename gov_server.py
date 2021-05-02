@@ -49,11 +49,14 @@ def today():
     us_endpoint = "country/us/"
     r = requests.get(url + us_endpoint)
     soup = BeautifulSoup(r.content, 'html.parser')
+
+    # gets the names of the states
     name_results = soup.find_all(class_="mt_a")[:51]
     names_array = []
     for name in name_results:
         names_array.append(name.text)
 
+    # gets the number of new cases for each state
     new_cases_results = soup.find_all("td", attrs={
         'style': re.compile(r'font-weight: bold; text-align:right;(background-color:#FFEEAA;)*')})[0:204:4]
     new_cases_array = []
@@ -63,6 +66,7 @@ def today():
             text = "0"
         new_cases_array.append(int(text.strip("").replace("+", "").replace(",", "")))
 
+    # gets the number of active cases for each state
     active_num_results = soup.find_all("td", attrs={'style': 'text-align:right;font-weight:bold;'})[0:151:3]
     active_array = []
     for n in active_num_results:
@@ -71,6 +75,7 @@ def today():
             text = "0"
         active_array.append(int(text.strip("").replace(",", "")))
 
+    # creates the graph for a state upon individual request
     if request.method == "POST" and request.form.get("states") != "Summary":
         name = request.form.get("states")
         data = [new_cases_array[names_array.index(name)],
@@ -91,17 +96,19 @@ def today():
         return render_template("gov_today_page.html",
                                user_image=filename1)
 
+    # sorts the new cases and finds the top 10
     sorted_new = sorted(new_cases_array, reverse=True)[:10]
     sorted_names = []
     for i in sorted_new:
         sorted_names.append(names_array[new_cases_array.index(i)])
 
+    # sorts the active cases and finds the top 10
     sorted_active = sorted(active_array, reverse=True)[:10]
     sorted_active_names = []
     for i in sorted_active:
         sorted_active_names.append(names_array[active_array.index(i)])
 
-    # printing new cases
+    # graphs the active cases and new cases graphs
     plt.bar(sorted_names, sorted_new)
     for i in range(len(sorted_names)):
         plt.text(sorted_names[i], sorted_new[i] // 2,
