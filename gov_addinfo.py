@@ -5,6 +5,7 @@
 #          into MongoDB database.
 
 import tkinter as tk
+from tkinter import messagebox
 from pymongo import MongoClient
 import gov_keys
 from cryptography.fernet import Fernet
@@ -32,44 +33,50 @@ collection = db[gov_keys.PATIENT_COLLECTION]
 development_collection = db[gov_keys.DEVELOPMENT_COLLECTION]
 
 def submit():
-        # Get all fields from GUI
-        firstname = firstname_var.get()
-        middlename = middlename_var.get()
-        lastname = lastname_var.get()
-        ssn = ssn_var.get()
-        dob = dob_var.get()
+        # Get all fields from GUI and strip of leading/trailing whitespaces
+        firstname = firstname_var.get().strip()
+        middlename = middlename_var.get().strip()
+        lastname = lastname_var.get().strip()
+        ssn = ssn_var.get().strip()
+        dob = dob_var.get().strip()
 
-        # Create data for QR code and encrypt
-        num_business_requests = 0
-        num_individual_requests = 0
-        qr_data = str(firstname + "_" + middlename + "_" + lastname + "_" + ssn[-4:])
-        encryption_key = str(firstname + "_" + lastname + "_" + ssn[-4:] + "_" + dob)
-        hash_var = hashlib.md5(encryption_key.encode())
-        gen_key = base64.urlsafe_b64encode(hash_var.hexdigest().encode())
-        key = Fernet(gen_key)
-        encrypted_qr = key.encrypt(qr_data.encode())
+        #Check SSN and DOB for valid entries
+        if len(ssn) != 9:
+            messagebox.showinfo("ERROR", "Invalid SSN Input")
+        elif len(dob) != 10:
+            messagebox.showinfo("ERROR", "Invalid Date of Birth Input")
+        else:
+            # Create data for QR code and encrypt
+            num_business_requests = 0
+            num_individual_requests = 0
+            qr_data = str(firstname + "_" + middlename + "_" + lastname + "_" + ssn[-4:])
+            encryption_key = str(firstname + "_" + lastname + "_" + ssn[-4:] + "_" + dob)
+            hash_var = hashlib.md5(encryption_key.encode())
+            gen_key = base64.urlsafe_b64encode(hash_var.hexdigest().encode())
+            key = Fernet(gen_key)
+            encrypted_qr = key.encrypt(qr_data.encode())
 
-        # Add encryption entry to database
-        today = date.today()
-        current_date = today.strftime("%m/%d/%Y")
-        vaccine_entry = {"FirstName": key.encrypt(firstname.encode()).decode(), "MiddleName": key.encrypt(middlename.encode()).decode(), "LastName": key.encrypt(lastname.encode()).decode(),
-                         "SSN": key.encrypt(ssn.encode()).decode(), "DateOfBirth": key.encrypt(dob.encode()).decode(), "QRCodeData": encrypted_qr.decode(), "DateVaccinated": key.encrypt(current_date.encode()).decode(),
-                         "NumBusinessRequests": num_business_requests, "NumIndividualRequests": num_individual_requests}
-        develop_entry = {"FirstName": firstname,
-                         "MiddleName": middlename,
-                         "LastName": lastname,
-                         "SSN": ssn, "DateOfBirth": dob,
-                         "QRCodeData": qr_data,
-                         "DateVaccinated": current_date}
-        x = collection.insert_one(vaccine_entry)
-        dev = development_collection.insert_one(develop_entry)
+            # Add encryption entry to database
+            today = date.today()
+            current_date = today.strftime("%m/%d/%Y")
+            vaccine_entry = {"FirstName": key.encrypt(firstname.encode()).decode(), "MiddleName": key.encrypt(middlename.encode()).decode(), "LastName": key.encrypt(lastname.encode()).decode(),
+                             "SSN": key.encrypt(ssn.encode()).decode(), "DateOfBirth": key.encrypt(dob.encode()).decode(), "QRCodeData": encrypted_qr.decode(), "DateVaccinated": key.encrypt(current_date.encode()).decode(),
+                             "NumBusinessRequests": num_business_requests, "NumIndividualRequests": num_individual_requests}
+            develop_entry = {"FirstName": firstname,
+                             "MiddleName": middlename,
+                             "LastName": lastname,
+                             "SSN": ssn, "DateOfBirth": dob,
+                             "QRCodeData": qr_data,
+                             "DateVaccinated": current_date}
+            x = collection.insert_one(vaccine_entry)
+            dev = development_collection.insert_one(develop_entry)
 
-        # Reset variables for next user to input
-        firstname_var.set("")
-        middlename_var.set("")
-        lastname_var.set("")
-        ssn_var.set("")
-        dob_var.set("")
+            # Reset variables for next user to input
+            firstname_var.set("")
+            middlename_var.set("")
+            lastname_var.set("")
+            ssn_var.set("")
+            dob_var.set("")
 
 # Create labels and entry boxes for all fields
 firstname_label = tk.Label(root, text='First Name', font=('calibre', 12, 'bold'))
