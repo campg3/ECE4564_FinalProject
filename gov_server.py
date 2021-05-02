@@ -5,7 +5,7 @@
 #          can get or scan QR codes and determine if someone is vaccinated.
 import base64
 import hashlib
-
+import matplotlib.pyplot as plt
 import requests
 from flask import Flask, request, render_template
 from flask_httpauth import HTTPBasicAuth
@@ -19,6 +19,10 @@ from bson.json_util import dumps, loads
 import json
 from cryptography.fernet import Fernet
 import pickle
+import uuid
+import re
+import shutil
+import os
 
 # Initializes Flask server and basic HTTP authentication
 app = Flask(__name__, template_folder='gov_website')
@@ -38,13 +42,7 @@ def verify_password(username, password):
         return username
 
 
-# Landing page for the government website
-@app.route("/", methods=['GET'])
-def landing():
-    result = {'country': 'US'}
-    url = "https://www.worldometers.info/coronavirus/country/us/"
-    r = requests.get(url)
-    soup = BeautifulSoup(r.content, 'html.parser')
+def request_helper(soup, result):
     results = soup.find_all(id='maincounter-wrap')  # finds the data in the html
     for r in results:
         title = r.text.split(":")
@@ -54,6 +52,112 @@ def landing():
             result['Deaths'] = int(title[1].replace(",", ""))
         elif "Recovered" in title[0]:
             result['Recovered'] = int(title[1].replace(",", ""))
+    return result
+
+
+@app.route("/today", methods=['GET', 'POST'])
+def today():
+    url = "https://www.worldometers.info/coronavirus/"
+    us_endpoint = "country/us/"
+    r = requests.get(url + us_endpoint)
+    soup = BeautifulSoup(r.content, 'html.parser')
+    name_results = soup.find_all(class_="mt_a")[:51]
+    print(name_results)
+    names_array = []
+    for name in name_results:
+        names_array.append(name.text)
+
+    new_cases_results = soup.find_all("td", attrs={
+        'style': re.compile(r'font-weight: bold; text-align:right;(background-color:#FFEEAA;)*')})[0:204:4]
+    new_cases_array = []
+    for n in new_cases_results:
+        text = n.text.strip(" ")
+        if text == "\n" or text == "":
+            text = "0"
+        new_cases_array.append(int(text.strip("").replace("+", "").replace(",", "")))
+
+    active_num_results = soup.find_all("td", attrs={'style': 'text-align:right;font-weight:bold;'})[0:151:3]
+    active_array = []
+    for n in active_num_results:
+        text = n.text.strip("\n").strip(" ")
+        if text == "N/A" or text == "":
+            text = "0"
+        active_array.append(int(text.strip("").replace(",", "")))
+
+    if request.method == "POST" and request.form.get("states") != "Summary":
+        name = request.form.get("states")
+        # printing new cases
+        print(len(names_array))
+        print(len(new_cases_array))
+        print(len(active_array))
+        data = [new_cases_array[names_array.index(name)],
+                active_array[names_array.index(name)]]
+        names = ["New Cases (" + str(data[0]) + ")", "Active Cases (" + str(data[1])+ ")"]
+        plt.bar(names, data)
+        for i in range(2):
+            plt.text(names[i],
+                     data[i],
+                     data[i], ha='center')
+        plt.xlabel('States')
+        plt.ylabel('Number of Cases')
+        plt.yscale("log")
+        plt.title('New Cases and Active Cases for ' + name)
+        filename1 = "static/" + str(uuid.uuid4()) + ".png"
+        plt.savefig(filename1)
+        plt.clf()
+        return render_template("gov_today_page.html",
+                               user_image=filename1)
+
+    sorted_new = sorted(new_cases_array, reverse=True)[:10]
+    sorted_names = []
+    for i in sorted_new:
+        sorted_names.append(names_array[new_cases_array.index(i)])
+
+    sorted_active = sorted(active_array, reverse=True)[:10]
+    sorted_active_names = []
+    for i in sorted_active:
+        sorted_active_names.append(names_array[active_array.index(i)])
+
+    # printing new cases
+    plt.bar(sorted_names, sorted_new)
+    for i in range(len(sorted_names)):
+        plt.text(sorted_names[i], sorted_new[i] // 2,
+                 sorted_names[i] + " (" + str(sorted_new[i]) + ")", ha='center', rotation=90)
+    plt.xlabel('States')
+    plt.ylabel('Number of Cases')
+    plt.title('Top 10 States based on number of new cases')
+    plt.xticks([])
+    filename1 = "static/" + str(uuid.uuid4()) + ".png"
+    plt.savefig(filename1)
+    plt.clf()
+
+    plt.bar(sorted_active_names, sorted_active)
+    for i in range(len(sorted_active_names)):
+        plt.text(sorted_active_names[i], sorted_active[i] / 2,
+                 sorted_active_names[i] + " (" + str(sorted_active[i]) + ")", ha='center', rotation=90)
+    plt.xlabel('States')
+    plt.ylabel('Number of Cases (millions)')
+    plt.title('Top 10 States based on number of active cases')
+    plt.xticks([])
+    filename2 = "static/" + str(uuid.uuid4()) + ".png"
+    plt.savefig(filename2)
+    plt.clf()
+    return render_template("gov_today_page.html",
+                           user_image=filename1,
+                           user_image1=filename2)
+
+
+# Landing page for the government website
+@app.route("/", methods=['GET'])
+def landing():
+    shutil.rmtree('static')
+    os.makedirs('static')
+    result = {'country': 'US'}
+    url = "https://www.worldometers.info/coronavirus/"
+    us_endpoint = "country/us/"
+    r = requests.get(url + us_endpoint)
+    soup = BeautifulSoup(r.content, 'html.parser')
+    result = request_helper(soup, result)
 
     client = MongoClient(
         "mongodb+srv://" + gov_keys.DATABASE_ADMIN_USERNAME + ":" + gov_keys.DATABASE_ADMIN_PASSWORD +
@@ -133,7 +237,7 @@ def business():
     else:
         if collection_item["NumBusinessRequests"] == collection_item["NumIndividualRequests"]:
             return "Warning: Do not duplicate QR codes"
-        collection.update_one(query, {"$set": {"NumBusinessRequests": collection_item["NumBusinessRequests"]+1}})
+        collection.update_one(query, {"$set": {"NumBusinessRequests": collection_item["NumBusinessRequests"] + 1}})
         return "Vaccination Record Found"
 
 
