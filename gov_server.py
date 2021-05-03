@@ -140,10 +140,6 @@ def today():
 # Landing page for the government website, shows some simple US COVID stats
 @app.route("/", methods=['GET'])
 def landing():
-    # clean out the directory where images are stored so it doesn't get too big
-    shutil.rmtree('static')
-    os.makedirs('static')
-
     # extract data from the website for how many cases, deaths, and recoveries
     result = {'country': 'US'}
     url = "https://www.worldometers.info/coronavirus/"
