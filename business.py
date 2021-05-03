@@ -4,7 +4,6 @@
 # Tool that businesses will use in order to scan QR codes,
 # send it to the government, and find out if QR code is valid
 import cv2
-import time
 import threading
 from pyzbar import pyzbar
 import winsound

@@ -10,7 +10,6 @@ from pymongo import MongoClient
 import gov_keys
 from cryptography.fernet import Fernet
 from datetime import date
-import pickle
 import base64
 import hashlib
 

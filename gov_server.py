@@ -19,8 +19,6 @@ import qrcode
 from cryptography.fernet import Fernet
 import uuid
 import re
-import shutil
-import os
 matplotlib.use("Agg")
 
 # Initializes Flask server and basic HTTP authentication
