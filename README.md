@@ -1,7 +1,7 @@
 # ECE4564_FinalProject
 This github contains our code for our final project for ECE 4564 in Spring 2021.
 
-Our project/system provides a website along with tools that the government uses and tools that businesses will have.
+Our project/system provides a website along with tools that the government uses and tools that businesses will have for our implementation of a COVID PASSPORT SYSTEM.
 
 Our website has three main pages:
 1) Landing page - This page gives simple COVID statistics for the US, along with the number of people that our system has vacccinated. It also provides buttons to take the web visitor to the other pages of our website. (/today, /individual, and other websites that help give info on where vaccinations can be obtained)
