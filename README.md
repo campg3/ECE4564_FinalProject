@@ -1,4 +1,4 @@
-# ECE4564_FinalProject
+# ECE4564_FinalProject Covid Vaccination Passport System
 This github contains our code for our final project for ECE 4564 in Spring 2021.
 
 Our project/system provides a website along with tools that the government uses and tools that businesses will have for our implementation of a COVID PASSPORT SYSTEM.
